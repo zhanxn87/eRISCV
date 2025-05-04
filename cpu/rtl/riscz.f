@@ -1,0 +1,15 @@
+./decoder.sv
+./regfile.sv
+./alu.sv
+./mult.sv
+./load_store_unit.sv
+./if_stage.sv
+./ex_stage.sv
+./id_stage.sv
+./controller.sv
+./exc_controller.sv
+./cs_register.sv
+./riscv_core.sv
+./data_mem.sv
+./instr_mem.sv
+./riscv.sv

@@ -1,0 +1,17 @@
+../rtl/riscv_defines.sv
+../rtl/if_stage.sv
+../rtl/decoder.sv
+../rtl/regfile.sv
+../rtl/id_stage.sv
+../rtl/alu.sv
+../rtl/mult.sv
+../rtl/ex_stage.sv
+../rtl/load_store_unit.sv
+../rtl/controller.sv
+../rtl/exc_controller.sv
+../rtl/cs_registers.sv
+../rtl/riscv_core.sv
+../rtl/data_mem.sv
+../rtl/instr_mem.sv
+../rtl/riscv.sv
+../tb/riscv_tb.sv
