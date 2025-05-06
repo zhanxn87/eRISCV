@@ -48,7 +48,7 @@ import riscv_defines::*;
   input  logic        csr_access_i,
   input  logic [11:0] csr_addr_i,
   input  logic [31:0] csr_wdata_i,
-  input  logic  [1:0] csr_op_i,
+  input  csr_op_t     csr_op_i,
   output logic [31:0] csr_rdata_o,
 
   // Interrupts
@@ -152,6 +152,8 @@ import riscv_defines::*;
       12'hF10: csr_rdata_int = {21'b0, cluster_id_i[5:0], 1'b0, core_id_i[3:0]};
 
       12'h7C0: csr_rdata_int = {29'b0, 2'b11, mestatus_q};
+
+      default: csr_rdata_int = 32'h0;
     endcase
   end
 

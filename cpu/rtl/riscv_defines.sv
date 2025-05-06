@@ -215,10 +215,22 @@ typedef enum logic [2:0] {
 // Exceptions offsets
 // target address = {boot_addr[31:8], EXC_OFF} (boot_addr must be 32 BYTE aligned!)
 // offset 00 to 7e is used for external interrupts
-parameter EXC_OFF_RST      = 8'h80;
+parameter EXC_OFF_RST      = 8'hC0;
 parameter EXC_OFF_ILLINSN  = 8'h84;
 parameter EXC_OFF_ECALL    = 8'h88;
 parameter EXC_OFF_LSUERR   = 8'h8c;
 parameter EXC_OFF_EBREAK   = 8'h88;
+
+// Debug module
+parameter DBG_SETS_W = 6;
+
+parameter DBG_SETS_IRQ    = 5;
+parameter DBG_SETS_ECALL  = 4;
+parameter DBG_SETS_EILL   = 3;
+parameter DBG_SETS_ELSU   = 2;
+parameter DBG_SETS_EBRK   = 1;
+parameter DBG_SETS_SSTE   = 0;
+
+parameter DBG_CAUSE_HALT   = 6'h1F;
 
 endpackage

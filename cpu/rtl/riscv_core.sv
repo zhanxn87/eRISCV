@@ -561,7 +561,7 @@ exc_controller exc_controller_i
   .req_o                ( exc_req          ),
   .ack_i                ( exc_ack          ),
 
-  .trap_o               ( dbg_trap         ),
+  .trap_o               ( dbg_trap         ), // to debug unit, not used in this version
 
   // to IF stage
   .pc_mux_o             ( exc_pc_mux       ),
