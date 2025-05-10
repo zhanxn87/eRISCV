@@ -40,7 +40,7 @@ import riscv_defines::*;
   input  logic        pipe_flush_i,               // decoder wants to do a pipe flush
 
   // jump/branch signals
-  input  logic [1:0]  jump_mode_id_i,             // jump is being calculated in ALU
+  input  jump_t       jump_mode_dec_i,            // jump is being calculated in ALU
   input  logic        branch_taken_ex_i,          // branch taken signal from EX ALU
 
   // to IF_stage.prefetcher
@@ -180,7 +180,7 @@ import riscv_defines::*;
           // we can jump directly since we know the address already
           // we don't need to worry about conditional branches here as they
           // will be evaluated in the EX stage
-          if (jump_mode_id_i == JT_JALR || jump_mode_id_i == JT_JAL) begin
+          if (jump_mode_dec_i == JT_JALR || jump_mode_dec_i == JT_JAL) begin
             pc_mux_o = PC_JUMP;
 
             // if there is a jr stall, wait for it to be gone
@@ -311,7 +311,7 @@ import riscv_defines::*;
   end
 
   // Performance Counters
-  assign perf_jump_o      = (jump_mode_id_i == JT_JAL || jump_mode_id_i == JT_JALR);
+  assign perf_jump_o      = (jump_mode_dec_i == JT_JAL || jump_mode_dec_i == JT_JALR);
   assign perf_jr_stall_o  = jr_stall_i;
   assign perf_ld_stall_o  = load_stall_i;
 

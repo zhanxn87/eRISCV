@@ -72,7 +72,8 @@ logic        ex_valid;     // EX stage is done
 logic        wb_valid;     // WB stage is done
 
 // Interrupt signals
-logic        irq_enable;
+logic        m_irq_enable;
+logic        u_irq_enable;
 
 // Signals running between controller and exception controller
 logic        exc_req, exc_ack;  // handshake
@@ -108,7 +109,12 @@ logic        mult_sel_subword_ex; // Multiplier subword selection from EX stage
 logic [1:0]  mult_signed_mode_ex; // Multiplier signed mode from EX stage
 logic [4:0]  mult_imm_ex;          // Multiplier immediate value from EX stage
 
+logic [23:0] mtvec;
+logic [23:0] utvec;
+logic [ 1:0] mtvec_mode;
+logic [ 1:0] utvec_mode;
 logic [31:0] mepc;                 // Machine exception program counter
+logic [31:0] uepc;                 // User exception program counter
 
 logic        data_req_ex;          // Data request signal from EX stage
 logic        data_we_ex;           // Data write enable signal from EX stage  
@@ -139,7 +145,7 @@ logic        lsu_busy;             // Load/store unit busy signal
 // Signal declarations for CSR interface
 logic [11:0] csr_addr_int;
 logic        csr_access;
-logic [11:0] csr_addr;
+csr_num_e    csr_addr;
 logic [31:0] csr_wdata;
 csr_op_t     csr_op;
 logic [31:0] csr_rdata;            // CSR read data
@@ -426,62 +432,66 @@ ex_stage  ex_stage_i
 // Mux for CSR access through Debug Unit
 assign csr_addr_int = csr_access_ex ? alu_operand_b_ex[11:0] : '0;
 assign csr_access   = csr_access_ex;
-assign csr_addr     = csr_addr_int;
+assign csr_addr     = csr_num_e'(csr_addr_int);
 assign csr_wdata    = alu_operand_a_ex;
 assign csr_op       = csr_op_ex;
 
-riscv_cs_registers
-#(
-  .N_EXT_CNT       ( 2)
-)
-cs_registers_i
+cs_registers cs_registers_i
 (
   .clk                     ( clk                ),
   .rst_n                   ( rst_n              ),
 
   // Core and Cluster ID from outside
-  .core_id_i               ( 4'b0),
-  .cluster_id_i            ( 6'd0),
+  .hart_id_i               ( 32'b0),
+  .mtvec_o                 ( mtvec              ), //24bits
+  .utvec_o                 ( utvec              ), //24bits
+  .mtvec_mode_o            ( mtvec_mode         ), //2bits
+  .utvec_mode_o            ( utvec_mode         ), //2bits
+
+  .mtvec_addr_i            ( 32'b0),
+  .csr_mtvec_init_i        ( 1'b0 ), //mtvec init is done through CSR write
 
   // Interface to CSRs (SRAM like)
-  .csr_access_i            ( csr_access         ),
+  //.csr_access_i            ( csr_access         ),
   .csr_addr_i              ( csr_addr           ),
   .csr_wdata_i             ( csr_wdata          ),
   .csr_op_i                ( csr_op             ),
   .csr_rdata_o             ( csr_rdata          ),
 
   // Interrupt related control signals
-  .irq_enable_o            ( irq_enable         ),
+  .mip_i                   (32'b0), // interrupt pending
+  .mie_bypass_o            (),
+  .m_irq_enable_o          ( m_irq_enable       ),
+  .u_irq_enable_o          ( u_irq_enable       ),
   .mepc_o                  ( mepc               ),
+  .uepc_o                  ( uepc               ),
+
+  .priv_lvl_o              (),
 
   .pc_if_i                 ( pc_if              ),
   .pc_id_i                 ( pc_id              ), // from IF stage
   .pc_ex_i                 ( pc_ex              ), // from ID/EX pipeline
-  .data_load_event_ex_i    ( 1'b0 ), // from ID/EX pipeline
-  .exc_save_if_i           ( exc_save_if        ),
-  .exc_save_id_i           ( exc_save_id        ),
-  .exc_restore_i           ( exc_restore_id     ),
+  .csr_save_if_i           ( exc_save_if        ),
+  .csr_save_id_i           ( exc_save_id        ),
+  .csr_save_ex_i           ( 1'b0),
+  .csr_restore_mret_i      ( exc_restore_id     ),
+  .csr_restore_uret_i      ( 1'b0),
 
-  .exc_cause_i             ( exc_cause          ),
-  .save_exc_cause_i        ( save_exc_cause     ),
+  .csr_cause_i             ( exc_cause          ),
+  .csr_save_cause_i        ( save_exc_cause     ),
 
   // performance counter related signals
-  .id_valid_i              ( id_valid           ),
-  .is_compressed_i         ( 1'b0 ),
-  .is_decoding_i           ( is_decoding        ),
-
-  .imiss_i                 ( perf_imiss         ),
-  .pc_set_i                ( pc_set             ),
-  .jump_i                  ( perf_jump          ),
-  .branch_i                ( branch_in_ex       ),
-  .branch_taken_i          ( branch_decision    ),
-  .ld_stall_i              ( perf_ld_stall      ),
-  .jr_stall_i              ( perf_jr_stall      ),
-
-  .mem_load_i              ( data_req_o & (~data_we_o) ),
-  .mem_store_i             ( data_req_o & data_we_o    ),
-
-  .ext_counters_i          ( 2'b0)
+  .mhpmevent_minstret_i        ( id_valid & ex_valid ),
+  .mhpmevent_load_i            ( data_req_o & (~data_we_o) ),
+  .mhpmevent_store_i           ( data_req_o & data_we_o ),
+  .mhpmevent_jump_i            ( perf_jump ),
+  .mhpmevent_branch_i          ( branch_in_ex ),
+  .mhpmevent_branch_taken_i    ( branch_decision ),
+  .mhpmevent_compressed_i      ( 1'b0 ), // Assuming no compressed instructions
+  .mhpmevent_jr_stall_i        ( perf_jr_stall ),
+  .mhpmevent_imiss_i           ( perf_imiss ),
+  .mhpmevent_ld_stall_i        ( perf_ld_stall ),
+  .mhpmevent_pipe_stall_i      ( halt_if | halt_id | jr_stall | load_stall )
 );
 
 ////////////////////////////////////////////////////////////////////
@@ -509,7 +519,7 @@ controller controller_i
 
   // jump/branch control
   .branch_taken_ex_i              ( branch_decision        ),
-  .jump_mode_id_i                 ( jump_mode_id           ), //from ID stage
+  .jump_mode_dec_i                ( jump_mode_id           ), //from ID stage
 
   // to prefetcher
   .instr_req_o                    ( instr_req_int          ),
@@ -569,7 +579,7 @@ exc_controller exc_controller_i
 
   // Interrupt signals
   .irq_i                ( irq_i            ),
-  .irq_enable_i         ( irq_enable       ),
+  .irq_enable_i         ( m_irq_enable     ),
 
   .ebrk_insn_i          ( is_decoding & ebrk_insn_id     ),
   .illegal_insn_i       ( is_decoding & illegal_insn_id  ),

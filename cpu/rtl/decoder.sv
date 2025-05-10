@@ -10,6 +10,8 @@ module decoder
   input  logic                        i_is_compressed, // compressed instruction
 
   output logic                        o_illegal_inst,
+  output logic                        o_sys_fence_insn, // fence instruction
+  output logic                        o_sys_fencei_insn,// fence.i instruction
   output logic                        o_ebrk_inst,  // ebreak instruction
   output logic                        o_ecall_inst, // ecall instruction
   output logic                        o_eret_inst,  // eret instruction
@@ -139,7 +141,7 @@ module decoder
     rd_alu_we                   = 1'b0; // Enables writing to the register file from ALU
 
     o_csr_access                = 1'b0;
-    csr_op                      = CSR_OP_NONE;
+    csr_op                      = CSR_OP_READ;
 
     mem_wr_en                   = 1'b0;
     mem_req                     = 1'b0;
@@ -147,6 +149,8 @@ module decoder
     o_load_data_sign_ext        = 1'b0;
 
     o_illegal_inst              = 1'b0;
+    o_sys_fence_insn            = 1'b0;
+    o_sys_fencei_insn           = 1'b0;
     o_ecall_inst                = 1'b0;
     ebrk_inst                   = 1'b0;
     eret_inst                   = 1'b0;
@@ -199,7 +203,7 @@ module decoder
 
       OPCODE_BRANCH: begin // Branch
         branch_mode       = BRANCH_COND;
-        o_branch_offset   = imm_i_type;
+        o_branch_offset   = imm_b_type;
         o_rs1_en          = 1'b1;
         o_rs2_en          = 1'b1;
         o_alu_op_a_sel    = OP_A_REGA_OR_FWD;
@@ -406,39 +410,70 @@ module decoder
       ////////////////////////////////////////////////
       // System instructions
       ////////////////////////////////////////////////
+      OPCODE_FENCE: begin
+        unique case (instr[14:12])
+          3'b000: begin // FENCE
+            // Flush pipeline
+            o_sys_fence_insn = 1'b1;
+          end
+
+          3'b001: begin // FENCE.I
+            // Flush prefetch buffer, flush pipeline
+            o_sys_fencei_insn = 1'b1;
+          end
+
+          default: begin
+            o_illegal_inst = 1'b1;
+          end
+        endcase
+      end
+
       OPCODE_SYSTEM: begin
-        if (funct_3 == 3'b000)
-        begin
-          // non CSR related SYSTEM instructions
-          unique case (i_inst[31:0])
-            32'h00_00_00_73:  // ECALL
-            begin
-              // environment (system) call
-              o_ecall_inst = 1'b1;
-            end
+        if (funct_3 == 3'b000) begin
+          if ({instr[19:15], instr[11:7]} == '0) begin
+            // non CSR related SYSTEM instructions
+            unique case (instr[31:20])
+              12'h000: begin // ecall
+                // Environment (system) call
+                o_ecall_inst = 1'b1;
+              end
 
-            32'h00_10_00_73:  // ebreak
-            begin
-              // debugger trap
-              ebrk_inst = 1'b1;
-            end
+              12'h001: begin // ebreak
+                // Debugger trap
+                ebrk_inst = 1'b1;
+              end
 
-            32'h10_00_00_73:  // eret
-            begin
-              eret_inst = 1'b1;
-            end
+              12'h302: begin // mret
+                eret_inst = 1'b1;
+              end
 
-            32'h10_20_00_73:  // wfi: wait for interrupt
-            begin
-              // flush pipeline
-              pipe_flush = 1'b1;
-            end
+              12'h7b2: begin // dret
+                //dret;
+              end
 
-            default:
-            begin
-              o_illegal_inst = 1'b1;
-            end
-          endcase
+              12'h105: begin // wfi
+                // Suppressing WFI in case of ctrl_fsm_i.debug_no_sleep to prevent sleeping when not allowed.
+                // Using ctrl_fsm_i.debug_no sleep is safe because the fan-ins can only change when the pipeline is killed:
+                //  ctrl_fsm_o.debug_no_sleep = debug_mode_q || dcsr_i.step; from the controller_fsm
+                //  debug_mode can only change after debug entry or dret, both kills the pipeline
+                //  dcsr_i.step can only change during debug mode, and will only take effect once outside of debug mode
+                //  which again requires a dret that kills the pipeline.
+                //decoder_ctrl_o.sys_wfi_insn = ctrl_fsm_i.debug_no_sleep ? 1'b0 : 1'b1;
+                pipe_flush = 1'b1;
+              end
+
+              12'h8C0: begin // wfe
+              end
+
+              default: begin
+                o_illegal_inst = 1'b1;
+              end
+            endcase
+          end
+          else begin
+            // illegal instruction
+            o_illegal_inst = 1'b1;
+          end
         end
         else
         begin
@@ -460,8 +495,8 @@ module decoder
 
           unique case (i_inst[13:12])
             2'b01:   csr_op   = CSR_OP_WRITE;
-            2'b10:   csr_op   = CSR_OP_SET;
-            2'b11:   csr_op   = CSR_OP_CLEAR;
+            2'b10:   csr_op   = i_inst[19:15] == 5'b0 ? CSR_OP_READ : CSR_OP_SET;
+            2'b11:   csr_op   = i_inst[19:15] == 5'b0 ? CSR_OP_READ : CSR_OP_CLEAR;
             default: o_illegal_inst = 1'b1;
           endcase
         end
@@ -490,12 +525,11 @@ module decoder
   assign o_rd_alu_we    = (i_deassert_we) ? 1'b0          : rd_alu_we;
   assign o_mem_wr_en    = (i_deassert_we) ? 1'b0          : mem_wr_en;
   assign o_mem_req      = (i_deassert_we) ? 1'b0          : mem_req;
-  assign o_csr_op       = (i_deassert_we) ? CSR_OP_NONE   : csr_op;
-  assign o_branch_mode  = (i_deassert_we) ? BRANCH_NONE   : branch_mode;
-  assign o_jump_mode    = (i_deassert_we) ? JT_NONE       : jump_mode;
+  assign o_csr_op       = (i_deassert_we) ? CSR_OP_READ   : csr_op;
   assign o_ebrk_inst    = (i_deassert_we) ? 1'b0          : ebrk_inst;
   assign o_eret_inst    = (i_deassert_we) ? 1'b0          : eret_inst;
   assign o_pipe_flush   = (i_deassert_we) ? 1'b0          : pipe_flush;
 
-
+  assign o_branch_mode  = branch_mode;
+  assign o_jump_mode    = jump_mode;
 endmodule

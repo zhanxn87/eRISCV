@@ -8,7 +8,9 @@ vmap work work
 vlog +acc -work work -incr -f file.list
 
 #[vsim]
-vsim -lib work -t 1ps +instr_init=instr_mem_tc1.hex riscv_tb
+vsim -lib work -t 1ps +instr_init=./testcases/I-ADD-01/I-ADD-01.elf.mem riscv_tb
+
+set IterationLimit 1000
 
 do wave.do
 

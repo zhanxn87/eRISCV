@@ -28,7 +28,7 @@ module data_mem #(
 
   // Write operation
   always_ff @(posedge clk) begin
-    if (we) begin
+    if (req && we) begin
       if (be[0]) mem[addr][ 7: 0] <= wdata[ 7: 0]; // Write byte 0
       if (be[1]) mem[addr][15: 8] <= wdata[15: 8]; // Write byte 1 
       if (be[2]) mem[addr][23:16] <= wdata[23:16]; // Write byte 0

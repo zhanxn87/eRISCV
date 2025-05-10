@@ -167,7 +167,7 @@ import riscv_defines::*;
   always_ff @(posedge clk or posedge rst_n) begin
     if (!rst_n) begin
       pc_reg <= 32'h0;
-    end else begin
+    end else if(!halt_if_i) begin
       pc_reg <= fetch_addr;
     end
   end
@@ -189,14 +189,14 @@ import riscv_defines::*;
 
       if (if_valid_o)
       begin
-        instr_valid_id_o    <= fetch_valid & (!pc_set_i);
+        instr_valid_id_o    <= fetch_valid;// & (!pc_set_i);
         instr_rdata_id_o    <= pc_set_i ? instr_nop : instr_rdata_i;
         illegal_c_insn_id_o <= illegal_c_insn;
         pc_id_o             <= pc_if_o;
       end
       else 
       begin
-        instr_valid_id_o    <= 1'b0;
+        //instr_valid_id_o    <= 1'b0;
       end
     end
   end

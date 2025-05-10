@@ -1,0 +1,113 @@
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           RISC-V
+  Version:                           0x1
+  Entry point address:               0x80
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          37816 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         3
+  Size of section headers:           40 (bytes)
+  Number of section headers:         11
+  Section header string table index: 10
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text.trap        PROGBITS        00000000 001000 000064 00  AX  0   0 16
+  [ 2] .text.init        PROGBITS        00000080 001080 00013c 00  AX  0   0 64
+  [ 3] .tohost           PROGBITS        00020000 008000 000108 00  WA  0   0 256
+  [ 4] .text             PROGBITS        000001bc 0011bc 006a54 00  AX  0   0  4
+  [ 5] .data             PROGBITS        00020200 008200 000204 00  WA  0   0 256
+  [ 6] .data.string      PROGBITS        00020404 008404 000ad6 00  WA  0   0  1
+  [ 7] .riscv.attributes RISCV_ATTRIBUTE 00000000 008eda 000027 00      0   0  1
+  [ 8] .symtab           SYMTAB          00000000 008f04 0002c0 10      9  34  4
+  [ 9] .strtab           STRTAB          00000000 0091c4 000190 00      0   0  1
+  [10] .shstrtab         STRTAB          00000000 009354 000064 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), p (processor specific)
+
+There are no section groups in this file.
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  RISCV_ATTRIBUT 0x008eda 0x00000000 0x00000000 0x00027 0x00000 R   0x1
+  LOAD           0x001000 0x00000000 0x00000000 0x06c10 0x06c10 R E 0x1000
+  LOAD           0x008000 0x00020000 0x00020000 0x00eda 0x00eda RW  0x1000
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .riscv.attributes 
+   01     .text.trap .text.init .text 
+   02     .tohost .data .data.string 
+
+There is no dynamic section in this file.
+
+There are no relocations in this file.
+
+The decoding of unwind sections for machine type RISC-V is not currently supported.
+
+Symbol table '.symtab' contains 44 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 00000000     0 SECTION LOCAL  DEFAULT    1 .text.trap
+     2: 00000080     0 SECTION LOCAL  DEFAULT    2 .text.init
+     3: 00020000     0 SECTION LOCAL  DEFAULT    3 .tohost
+     4: 000001bc     0 SECTION LOCAL  DEFAULT    4 .text
+     5: 00020200     0 SECTION LOCAL  DEFAULT    5 .data
+     6: 00020404     0 SECTION LOCAL  DEFAULT    6 .data.string
+     7: 00000000     0 SECTION LOCAL  DEFAULT    7 .riscv.attributes
+     8: 00000000     0 FILE    LOCAL  DEFAULT  ABS ccJGW0Au.o
+     9: 00000000     0 NOTYPE  LOCAL  DEFAULT    1 $xrv32i2p1_zicsr2p0
+    10: 00000000     0 NOTYPE  LOCAL  DEFAULT    1 _trap_start
+    11: 00000034     0 NOTYPE  LOCAL  DEFAULT    1 _trap_exception
+    12: 00000058     0 NOTYPE  LOCAL  DEFAULT    1 _int_exc
+    13: 000000bc     0 NOTYPE  LOCAL  DEFAULT    2 write_tohost
+    14: 000001bc     0 NOTYPE  LOCAL  DEFAULT    4 FN_WriteStr
+    15: 000001bc     0 NOTYPE  LOCAL  DEFAULT    4 $xrv32i2p1_zicsr2p0
+    16: 000001dc     0 NOTYPE  LOCAL  DEFAULT    4 FN_WriteA0
+    17: 00000214     0 NOTYPE  LOCAL  DEFAULT    4 FN_WriteA0_64
+    18: 000001f0     0 NOTYPE  LOCAL  DEFAULT    4 FN_WriteA0_32
+    19: 00000234     0 NOTYPE  LOCAL  DEFAULT    4 FN_WriteA0_common
+    20: 00000080     0 NOTYPE  LOCAL  DEFAULT    2 $xrv32i2p1_zicsr2p0
+    21: 000000c8     0 NOTYPE  LOCAL  DEFAULT    2 reset_vector
+    22: 00000084     0 NOTYPE  LOCAL  DEFAULT    2 trap_vector
+    23: 000000b8     0 NOTYPE  LOCAL  DEFAULT    2 handle_exception
+    24: 000000b8     0 NOTYPE  LOCAL  DEFAULT    2 other_exception
+    25: 0000013c     0 NOTYPE  LOCAL  DEFAULT    2 begin_testcode
+    26: 00020200     0 NOTYPE  LOCAL  DEFAULT    5 test_1_res
+    27: 00020214     0 NOTYPE  LOCAL  DEFAULT    5 test_2_res
+    28: 00020228     0 NOTYPE  LOCAL  DEFAULT    5 test_3_res
+    29: 0002023c     0 NOTYPE  LOCAL  DEFAULT    5 test_4_res
+    30: 00020250     0 NOTYPE  LOCAL  DEFAULT    5 test_5_res
+    31: 00020264     0 NOTYPE  LOCAL  DEFAULT    5 test_6_res
+    32: 00020278     0 NOTYPE  LOCAL  DEFAULT    5 test_7_res
+    33: 00006c0c     0 NOTYPE  LOCAL  DEFAULT    4 end_testcode
+    34: 00020290     0 NOTYPE  GLOBAL DEFAULT    5 end_signature
+    35: 00006c10     0 NOTYPE  GLOBAL DEFAULT    4 _etext
+    36: 00020300     0 NOTYPE  GLOBAL DEFAULT    5 begin_regstate
+    37: 00020200     0 NOTYPE  GLOBAL DEFAULT    5 begin_signature
+    38: 00000080     0 NOTYPE  GLOBAL DEFAULT    2 _start
+    39: 00020400     0 NOTYPE  GLOBAL DEFAULT    5 end_regstate
+    40: 00020eda     0 NOTYPE  GLOBAL DEFAULT    6 _edata
+    41: 00020eda     0 NOTYPE  GLOBAL DEFAULT    6 _end
+    42: 00020100     0 NOTYPE  GLOBAL DEFAULT    3 fromhost
+    43: 00020000     0 NOTYPE  GLOBAL DEFAULT    3 tohost
+
+No version information found in this file.
+Attribute Section: riscv
+File Attributes
+  Tag_RISCV_arch: "rv32i2p1_zicsr2p0"
+  Tag_RISCV_priv_spec: 1
+  Tag_RISCV_priv_spec_minor: 11

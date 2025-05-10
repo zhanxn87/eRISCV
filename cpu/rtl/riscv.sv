@@ -53,24 +53,24 @@ riscv_core riscv_core_i(
 );
 
 instr_mem #(
-  .ADDR_WIDTH ( 10), // Address width
+  .ADDR_WIDTH ( 13), // Address width
   .DATA_WIDTH ( 32)  // Data width
 ) instr_mem_i(
   .clk        (clk                ),       // Clock signal
   .rd_req     (instr_req          ),       // Read request signal
-  .addr       (instr_addr[11:2]   ),      // Address input
+  .addr       (instr_addr[14:2]   ),      // Address input
   .rvalid_o   (instr_rvalid       ),
   .instr_o    (instr_rdata        )      // Instruction output
 );
 
 data_mem #(
-  .ADDR_WIDTH ( 10 ),
+  .ADDR_WIDTH ( 13 ),
   .DATA_WIDTH ( 32 )
 ) data_mem_i(
   .clk        (clk          ),     // Clock signal
   .rst_n      (rst_n        ),     // Reset signal
   .req        (mem_req      ),     // Memory request signal
-  .addr       (mem_addr[11:2]     ),     // Address
+  .addr       (mem_addr[14:2]     ),     // Address
   .we         (mem_we       ),     // Write enable
   .be         (mem_be       ),     // Write enable
   .wdata      (mem_wdata    ),     // Write data

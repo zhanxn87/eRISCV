@@ -87,7 +87,7 @@ import riscv_defines::*;
 
     // CSR ID/EX
     output logic        csr_access_ex_o,
-    csr_op_t            csr_op_ex_o,
+    output csr_op_t     csr_op_ex_o,
 
     // Interface to load store unit
     output logic        data_req_ex_o,
@@ -118,7 +118,10 @@ import riscv_defines::*;
 
   // Decoder/Controller ID stage internal signals
 
-  branch_t     branch_mode;
+  branch_t     branch_mode_dec; //signal from decoder without deassert_we mask
+  jump_t       jump_mode_dec;
+  logic        illegal_insn_dec;
+  branch_t     branch_mode; //signals with deassert_we mask
   jump_t       jump_mode;
   logic        illegal_insn;
 
@@ -216,13 +219,12 @@ import riscv_defines::*;
   //////////////////////////////////////////////////////////////////
   // Jump and branch target calculation
   //////////////////////////////////////////////////////////////////
-  assign jump_base     = jump_mode == JT_JALR ? regfile_data_ra_id : pc_id_i;
+  assign jump_base     = jump_mode_dec == JT_JALR ? regfile_data_ra_id : pc_id_i;
   assign jump_target   = jump_base + imm_jump_offset;
   assign branch_target = pc_id_i + imm_branch_offset;
 
   assign jump_mode_id_o   = jump_mode;
   assign jump_target_id_o = jump_target;
-
 
   ///////////////////////////////////////////////
   // Decoder
@@ -233,7 +235,7 @@ import riscv_defines::*;
     .i_deassert_we                   ( deassert_we               ),
     .i_is_compressed                 ( 1'b0                      ),
 
-    .o_illegal_inst                  ( illegal_insn              ),
+    .o_illegal_inst                  ( illegal_insn_dec          ),
     .o_ebrk_inst                     ( ebrk_insn_o               ),
     .o_eret_inst                     ( eret_insn_o               ),
     .o_ecall_inst                    ( ecall_insn_o              ),
@@ -244,8 +246,8 @@ import riscv_defines::*;
     .i_pc                            ( pc_id_i                   ), // from IF stage
 
     // Jump and branch decoded control signals
-    .o_jump_mode                     ( jump_mode                 ), 
-    .o_branch_mode                   ( branch_mode               ),
+    .o_jump_mode                     ( jump_mode_dec             ), 
+    .o_branch_mode                   ( branch_mode_dec           ),
     .o_jump_offset                   ( imm_jump_offset           ),
     .o_branch_offset                 ( imm_branch_offset         ),
 
@@ -433,7 +435,7 @@ import riscv_defines::*;
       regfile_alu_we_ex_o         <= 1'b0;
 
       csr_access_ex_o             <= 1'b0;
-      csr_op_ex_o                 <= CSR_OP_NONE;
+      csr_op_ex_o                 <= CSR_OP_READ;
 
       data_we_ex_o                <= 1'b0;
       data_wdata_ex_o             <= '0;
@@ -523,10 +525,10 @@ import riscv_defines::*;
         // load/store operands
         //-----------------------------------------------------------
         data_req_ex_o               <= data_req_id;
+        data_we_ex_o                <= data_we_id;
         if (data_req_id)
         begin // only needed for LSU when there is an active request
-          data_we_ex_o              <= data_we_id;
-          data_wdata_ex_o           <= regfile_data_rb_id; // data to be written
+          data_wdata_ex_o           <= operand_b_fw_id; // data to be written to memory, 2025-05-10: fixed bug: use operand_b_fw_id instead of regfile_data_rb_id
           data_type_ex_o            <= data_type_id;
           data_sign_ext_ex_o        <= data_sign_ext_id;
           data_reg_offset_ex_o      <= data_reg_offset_id;
@@ -548,7 +550,7 @@ import riscv_defines::*;
 
         regfile_alu_we_ex_o         <= 1'b0;
 
-        csr_op_ex_o                 <= CSR_OP_NONE;
+        csr_op_ex_o                 <= CSR_OP_READ;
 
         data_req_ex_o               <= 1'b0;
 
@@ -566,12 +568,16 @@ import riscv_defines::*;
   // - always stall if a result is to be forwarded to the PC
   // we don't care about in which state the ctrl_fsm is as we deassert_we
   // anyway when we are not in DECODE
-  assign jr_stall   = (jump_mode == JT_JALR) &&
+  assign jr_stall   = (jump_mode_dec == JT_JALR) &&
                       ((regfile_lsu_we_wb_i && reg_d_lsu_wb_is_reg_a_id) ||
                        (regfile_lsu_we_ex_o && reg_d_lsu_ex_is_reg_a_id) ||
                        (regfile_alu_we_fw_i && reg_d_alu_fw_is_reg_a_id));
 
-  assign deassert_we = (~is_decoding_i || illegal_insn || load_stall || jr_stall);
+  assign deassert_we = (~is_decoding_i || illegal_insn_dec || load_stall || jr_stall);
+
+  assign branch_mode  = deassert_we ? BRANCH_NONE : branch_mode_dec;
+  assign jump_mode    = jump_mode_dec;
+  assign illegal_insn = illegal_insn_dec;
 
   assign id_ready_o = ((~jr_stall) & (~load_stall) & ex_ready_i);
   assign id_valid_o = (~halt_id_i) & id_ready_o;

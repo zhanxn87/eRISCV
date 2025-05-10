@@ -11,6 +11,8 @@ module riscv_tb;
   logic fetch_enable_i;
   logic [31:0] irq_i;
 
+  logic ecall_reached;
+
   // Instantiate DUT
   riscv dut (
     .clk            (clk),
@@ -23,6 +25,8 @@ module riscv_tb;
   // Clock generation
   initial clk = 0;
   always #(CLK_PERIOD / 2) clk = ~clk;
+
+  assign ecall_reached = dut.riscv_core_i.pc_set==1'b1 && dut.riscv_core_i.pc_mux==3'b100 && dut.riscv_core_i.exc_pc_mux==3'b001;
 
   // Test sequence
   initial begin
@@ -47,11 +51,54 @@ module riscv_tb;
     #20;
     irq_i = 32'h00000000;
 
-    // Let it run for a while
-    #200;
+    wait (ecall_reached); // Wait for ecall to be reached
 
-    $display("=== Simulation complete ===");
-    $finish;
+    #40;
+
+    // Call the task
+    compare_memory_with_reference("./testcases/I-ADD-01/I-ADD-01.reference_output");
+
+    $display("=== Simulation completed ===");
+    $stop;
   end
+
+  // Task to compare memory contents with reference file
+  task compare_memory_with_reference;
+    input string ref_file;
+    int file;
+    int status;
+    int i;
+    logic [31:0] ref_data;
+    logic [31:0] mem_data;
+
+    begin
+    file = $fopen(ref_file, "r");
+    if (file == 0) begin
+      $display("ERROR: Unable to open reference file: %s", ref_file);
+      $stop;
+    end
+
+    // Compare memory contents
+    i = 0;
+    while (!$feof(file)) begin
+      status = $fscanf(file, "%h\n", ref_data);
+      if (status != 1) begin
+      $display("ERROR: Failed to read data from reference file at line %0d", i + 1);
+      $stop;
+      end
+
+      mem_data = dut.data_mem_i.mem[8'h80 + i];
+      if (mem_data !== ref_data) begin
+      $display("ERROR: Mismatch at address 0x%0h: Expected 0x%0h, Got 0x%0h", 8'h80 + i, ref_data, mem_data);
+      $stop;
+      end
+
+      i++;
+    end
+
+    $fclose(file);
+    $display("Memory contents match reference file.");
+    end
+  endtask
 
 endmodule
