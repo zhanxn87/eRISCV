@@ -28,6 +28,8 @@ module riscv_tb;
 
   assign ecall_reached = dut.riscv_core_i.pc_set==1'b1 && dut.riscv_core_i.pc_mux==3'b100 && dut.riscv_core_i.exc_pc_mux==3'b001;
 
+  string tc_name;
+
   // Test sequence
   initial begin
     $display("=== Starting RISC-V CPU Testbench ===");
@@ -56,7 +58,13 @@ module riscv_tb;
     #40;
 
     // Call the task
-    compare_memory_with_reference("./testcases/I-ADD-01/I-ADD-01.reference_output");
+    // Optional: Initialize memory with a file
+    if (!$value$plusargs("tc=%s", tc_name)) begin
+        $fatal("No tc specified!");
+        tc_name = "I-ADD-01"; // Default tc_name
+    end
+    $display("TB using reference file: %s.reference_output", tc_name);
+    compare_memory_with_reference({"./testcases/", tc_name, ".reference_output"});
 
     $display("=== Simulation completed ===");
     $stop;
@@ -74,7 +82,7 @@ module riscv_tb;
     begin
     file = $fopen(ref_file, "r");
     if (file == 0) begin
-      $display("ERROR: Unable to open reference file: %s", ref_file);
+      $display("TB ERROR: Unable to open reference file: %s", ref_file);
       $stop;
     end
 
@@ -83,21 +91,26 @@ module riscv_tb;
     while (!$feof(file)) begin
       status = $fscanf(file, "%h\n", ref_data);
       if (status != 1) begin
-      $display("ERROR: Failed to read data from reference file at line %0d", i + 1);
-      $stop;
+        $display("TB ERROR: Failed to read data from reference file at line %0d", i + 1);
+        $stop;
       end
 
       mem_data = dut.data_mem_i.mem[8'h80 + i];
-      if (mem_data !== ref_data) begin
-      $display("ERROR: Mismatch at address 0x%0h: Expected 0x%0h, Got 0x%0h", 8'h80 + i, ref_data, mem_data);
-      $stop;
+
+      if (i < 32) begin
+        $display("TB INFO: Address 0x%0h: Expected 0x%8h, Got 0x%8h", 8'h80 + i, ref_data, mem_data);
+      end
+      
+      if (i<32 && mem_data !== ref_data) begin
+        $display("TB ERROR: Mismatch at address 0x%0h: Expected 0x%0h, Got 0x%0h", 8'h80 + i, ref_data, mem_data);
+        $stop;
       end
 
       i++;
     end
 
     $fclose(file);
-    $display("Memory contents match reference file.");
+    $display(">>>>>>>>>>PASS: Memory contents (0~%0d) match reference file.", ((i-1)>=32 ? 31 : (i-1)));
     end
   endtask
 

@@ -20,14 +20,16 @@ module instr_mem #(
   end
 
   // Optional: Initialize memory with a file
-  string filename;
+  string tc_name;
+  string file_name;
   initial begin
-    if (!$value$plusargs("instr_init=%s", filename)) begin
-        $fatal("No instr_init filename specified!");
-        filename = "instr_mem_init.hex"; // Default filename
+    if (!$value$plusargs("tc=%s", tc_name)) begin
+        $fatal("No tc specified!");
+        tc_name = "I-ADD-01"; // Default tc_name
     end
-    $display("Using file: %s", filename);
-    $readmemh(filename, mem);
+    file_name = {"./testcases/", tc_name, ".mem"};
+    $display("Instr_mem using file: %s", file_name);
+    $readmemh(file_name, mem);
   end
 
 endmodule

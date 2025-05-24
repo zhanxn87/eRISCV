@@ -1,0 +1,276 @@
+
+/home/zhanxn/Work/riscv/riscv-compliance/work/rv32i/I-RF_x0-01.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text.trap:
+
+00000000 <_trap_start>:
+   0:	0340006f          	j	34 <_trap_exception>
+   4:	0540006f          	j	58 <_int_exc>
+   8:	0500006f          	j	58 <_int_exc>
+   c:	04c0006f          	j	58 <_int_exc>
+  10:	0480006f          	j	58 <_int_exc>
+  14:	0440006f          	j	58 <_int_exc>
+  18:	0400006f          	j	58 <_int_exc>
+  1c:	03c0006f          	j	58 <_int_exc>
+  20:	0380006f          	j	58 <_int_exc>
+  24:	0340006f          	j	58 <_int_exc>
+  28:	0300006f          	j	58 <_int_exc>
+  2c:	02c0006f          	j	58 <_int_exc>
+  30:	0280006f          	j	58 <_int_exc>
+
+00000034 <_trap_exception>:
+  34:	34202573          	csrr	a0,mcause
+  38:	00b00593          	li	a1,11
+  3c:	00b50863          	beq	a0,a1,4c <_trap_exception+0x18>
+  40:	00020597          	auipc	a1,0x20
+  44:	1d058593          	addi	a1,a1,464 # 20210 <begin_signature>
+  48:	00a5a023          	sw	a0,0(a1)
+  4c:	00000517          	auipc	a0,0x0
+  50:	07050513          	addi	a0,a0,112 # bc <write_tohost>
+  54:	00050067          	jr	a0
+
+00000058 <_int_exc>:
+  58:	00000517          	auipc	a0,0x0
+  5c:	06450513          	addi	a0,a0,100 # bc <write_tohost>
+  60:	00050067          	jr	a0
+
+Disassembly of section .text.init:
+
+00000080 <_start>:
+  80:	0480006f          	j	c8 <reset_vector>
+
+00000084 <trap_vector>:
+  84:	34202f73          	csrr	t5,mcause
+  88:	00800f93          	li	t6,8
+  8c:	03ff0863          	beq	t5,t6,bc <write_tohost>
+  90:	00900f93          	li	t6,9
+  94:	03ff0463          	beq	t5,t6,bc <write_tohost>
+  98:	00b00f93          	li	t6,11
+  9c:	03ff0063          	beq	t5,t6,bc <write_tohost>
+  a0:	00000f13          	li	t5,0
+  a4:	000f0463          	beqz	t5,ac <trap_vector+0x28>
+  a8:	000f0067          	jr	t5
+  ac:	34202f73          	csrr	t5,mcause
+  b0:	000f5463          	bgez	t5,b8 <handle_exception>
+  b4:	0040006f          	j	b8 <handle_exception>
+
+000000b8 <handle_exception>:
+  b8:	5391e193          	ori	gp,gp,1337
+
+000000bc <write_tohost>:
+  bc:	00020f17          	auipc	t5,0x20
+  c0:	f43f2223          	sw	gp,-188(t5) # 20000 <tohost>
+  c4:	ff9ff06f          	j	bc <write_tohost>
+
+000000c8 <reset_vector>:
+  c8:	f1402573          	csrr	a0,mhartid
+  cc:	00051063          	bnez	a0,cc <reset_vector+0x4>
+  d0:	00000193          	li	gp,0
+  d4:	00000297          	auipc	t0,0x0
+  d8:	fb028293          	addi	t0,t0,-80 # 84 <trap_vector>
+  dc:	30529073          	csrw	mtvec,t0
+  e0:	00100513          	li	a0,1
+  e4:	01f51513          	slli	a0,a0,0x1f
+  e8:	00054863          	bltz	a0,f8 <reset_vector+0x30>
+  ec:	0ff0000f          	fence
+  f0:	00100193          	li	gp,1
+  f4:	00000073          	ecall
+  f8:	00000293          	li	t0,0
+  fc:	00028e63          	beqz	t0,118 <reset_vector+0x50>
+ 100:	10529073          	csrw	stvec,t0
+ 104:	0000b2b7          	lui	t0,0xb
+ 108:	10928293          	addi	t0,t0,265 # b109 <end_testcode+0xae8d>
+ 10c:	30229073          	csrw	medeleg,t0
+ 110:	30202373          	csrr	t1,medeleg
+ 114:	fa6292e3          	bne	t0,t1,b8 <handle_exception>
+ 118:	30005073          	csrwi	mstatus,0
+ 11c:	00002537          	lui	a0,0x2
+ 120:	80050513          	addi	a0,a0,-2048 # 1800 <end_testcode+0x1584>
+ 124:	30052073          	csrs	mstatus,a0
+ 128:	00000297          	auipc	t0,0x0
+ 12c:	01428293          	addi	t0,t0,20 # 13c <begin_testcode>
+ 130:	34129073          	csrw	mepc,t0
+ 134:	f1402573          	csrr	a0,mhartid
+ 138:	30200073          	mret
+
+0000013c <begin_testcode>:
+ 13c:	00020f97          	auipc	t6,0x20
+ 140:	0d4f8f93          	addi	t6,t6,212 # 20210 <begin_signature>
+ 144:	abcde037          	lui	zero,0xabcde
+ 148:	00100013          	li	zero,1
+ 14c:	7f006013          	ori	zero,zero,2032
+ 150:	53f07013          	andi	zero,zero,1343
+ 154:	80304013          	xori	zero,zero,-2045
+ 158:	00501013          	slli	zero,zero,0x5
+ 15c:	40205013          	srai	zero,zero,0x2
+ 160:	00405013          	srli	zero,zero,0x4
+ 164:	000fa023          	sw	zero,0(t6)
+ 168:	00020f97          	auipc	t6,0x20
+ 16c:	0acf8f93          	addi	t6,t6,172 # 20214 <test_A2_res>
+ 170:	00100093          	li	ra,1
+ 174:	7f000113          	li	sp,2032
+ 178:	53f00193          	li	gp,1343
+ 17c:	80300213          	li	tp,-2045
+ 180:	00500293          	li	t0,5
+ 184:	00200313          	li	t1,2
+ 188:	00400393          	li	t2,4
+ 18c:	01800413          	li	s0,24
+ 190:	abcde017          	auipc	zero,0xabcde
+ 194:	00100033          	add	zero,zero,ra
+ 198:	00206033          	or	zero,zero,sp
+ 19c:	00307033          	and	zero,zero,gp
+ 1a0:	00404033          	xor	zero,zero,tp
+ 1a4:	00501033          	sll	zero,zero,t0
+ 1a8:	40605033          	sra	zero,zero,t1
+ 1ac:	00705033          	srl	zero,zero,t2
+ 1b0:	40800033          	neg	zero,s0
+ 1b4:	000fa023          	sw	zero,0(t6)
+ 1b8:	00020f97          	auipc	t6,0x20
+ 1bc:	060f8f93          	addi	t6,t6,96 # 20218 <test_A3_res>
+ 1c0:	00100093          	li	ra,1
+ 1c4:	00200113          	li	sp,2
+ 1c8:	0020a033          	slt	zero,ra,sp
+ 1cc:	000fa023          	sw	zero,0(t6)
+ 1d0:	0020b033          	sltu	zero,ra,sp
+ 1d4:	000fa223          	sw	zero,4(t6)
+ 1d8:	0020a013          	slti	zero,ra,2
+ 1dc:	000fa423          	sw	zero,8(t6)
+ 1e0:	0020b013          	sltiu	zero,ra,2
+ 1e4:	000fa623          	sw	zero,12(t6)
+ 1e8:	00020f97          	auipc	t6,0x20
+ 1ec:	040f8f93          	addi	t6,t6,64 # 20228 <test_A4_res>
+ 1f0:	0040006f          	j	1f4 <begin_testcode+0xb8>
+ 1f4:	000fa023          	sw	zero,0(t6)
+ 1f8:	00000097          	auipc	ra,0x0
+ 1fc:	00c08093          	addi	ra,ra,12 # 204 <begin_testcode+0xc8>
+ 200:	00008067          	ret
+ 204:	000fa223          	sw	zero,4(t6)
+ 208:	00020097          	auipc	ra,0x20
+ 20c:	ff808093          	addi	ra,ra,-8 # 20200 <test_A5_data>
+ 210:	00020f97          	auipc	t6,0x20
+ 214:	020f8f93          	addi	t6,t6,32 # 20230 <test_A5_res>
+ 218:	0000a003          	lw	zero,0(ra)
+ 21c:	000fa023          	sw	zero,0(t6)
+ 220:	00009003          	lh	zero,0(ra)
+ 224:	000fa223          	sw	zero,4(t6)
+ 228:	00008003          	lb	zero,0(ra)
+ 22c:	000fa423          	sw	zero,8(t6)
+ 230:	0000c003          	lbu	zero,0(ra)
+ 234:	000fa623          	sw	zero,12(t6)
+ 238:	00020297          	auipc	t0,0x20
+ 23c:	fd828293          	addi	t0,t0,-40 # 20210 <begin_signature>
+ 240:	20000337          	lui	t1,0x20000
+ 244:	00830313          	addi	t1,t1,8 # 20000008 <_etext+0x1ffdf008>
+ 248:	00532023          	sw	t0,0(t1)
+ 24c:	00020297          	auipc	t0,0x20
+ 250:	ff428293          	addi	t0,t0,-12 # 20240 <end_signature>
+ 254:	20000337          	lui	t1,0x20000
+ 258:	00c30313          	addi	t1,t1,12 # 2000000c <_etext+0x1ffdf00c>
+ 25c:	00532023          	sw	t0,0(t1)
+ 260:	00100293          	li	t0,1
+ 264:	20000337          	lui	t1,0x20000
+ 268:	01030313          	addi	t1,t1,16 # 20000010 <_etext+0x1ffdf010>
+ 26c:	00532023          	sw	t0,0(t1)
+ 270:	0ff0000f          	fence
+ 274:	00100193          	li	gp,1
+ 278:	00000073          	ecall
+
+0000027c <end_testcode>:
+ 27c:	c0001073          	unimp
+ 280:	00000013          	nop
+ 284:	00000013          	nop
+ 288:	00000013          	nop
+ 28c:	00000013          	nop
+ 290:	00000013          	nop
+ 294:	00000013          	nop
+ 298:	00000013          	nop
+ 29c:	00000013          	nop
+ 2a0:	00000013          	nop
+ 2a4:	00000013          	nop
+ 2a8:	00000013          	nop
+ 2ac:	00000013          	nop
+ 2b0:	00000013          	nop
+ 2b4:	00000013          	nop
+ 2b8:	00000013          	nop
+
+Disassembly of section .tohost:
+
+00020000 <tohost>:
+	...
+
+00020100 <fromhost>:
+	...
+
+Disassembly of section .data:
+
+00020200 <test_A5_data>:
+   20200:	42524e4f          	.insn	4, 0x42524e4f
+	...
+
+00020210 <begin_signature>:
+   20210:	ffff                	.insn	2, 0xffff
+   20212:	ffff                	.insn	2, 0xffff
+
+00020214 <test_A2_res>:
+   20214:	ffff                	.insn	2, 0xffff
+   20216:	ffff                	.insn	2, 0xffff
+
+00020218 <test_A3_res>:
+   20218:	ffff                	.insn	2, 0xffff
+   2021a:	ffff                	.insn	2, 0xffff
+   2021c:	ffff                	.insn	2, 0xffff
+   2021e:	ffff                	.insn	2, 0xffff
+   20220:	ffff                	.insn	2, 0xffff
+   20222:	ffff                	.insn	2, 0xffff
+   20224:	ffff                	.insn	2, 0xffff
+   20226:	ffff                	.insn	2, 0xffff
+
+00020228 <test_A4_res>:
+   20228:	ffff                	.insn	2, 0xffff
+   2022a:	ffff                	.insn	2, 0xffff
+   2022c:	ffff                	.insn	2, 0xffff
+   2022e:	ffff                	.insn	2, 0xffff
+
+00020230 <test_A5_res>:
+   20230:	ffff                	.insn	2, 0xffff
+   20232:	ffff                	.insn	2, 0xffff
+   20234:	ffff                	.insn	2, 0xffff
+   20236:	ffff                	.insn	2, 0xffff
+   20238:	ffff                	.insn	2, 0xffff
+   2023a:	ffff                	.insn	2, 0xffff
+   2023c:	ffff                	.insn	2, 0xffff
+   2023e:	ffff                	.insn	2, 0xffff
+
+00020240 <end_signature>:
+	...
+
+00020300 <begin_regstate>:
+   20300:	0080                	.insn	2, 0x0080
+	...
+
+00020400 <end_regstate>:
+   20400:	0004                	.insn	2, 0x0004
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	2641                	.insn	2, 0x2641
+   2:	0000                	.insn	2, 0x0000
+   4:	7200                	.insn	2, 0x7200
+   6:	7369                	.insn	2, 0x7369
+   8:	01007663          	bgeu	zero,a6,14 <_trap_start+0x14>
+   c:	001c                	.insn	2, 0x001c
+   e:	0000                	.insn	2, 0x0000
+  10:	7205                	.insn	2, 0x7205
+  12:	3376                	.insn	2, 0x3376
+  14:	6932                	.insn	2, 0x6932
+  16:	7032                	.insn	2, 0x7032
+  18:	5f31                	.insn	2, 0x5f31
+  1a:	697a                	.insn	2, 0x697a
+  1c:	32727363          	bgeu	tp,t2,342 <end_testcode+0xc6>
+  20:	3070                	.insn	2, 0x3070
+  22:	0800                	.insn	2, 0x0800
+  24:	0a01                	.insn	2, 0x0a01
+  26:	0b                	.byte	0x0b
