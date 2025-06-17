@@ -1,2 +1,2 @@
-# riscz
-Build a RISC CPU from zero with AI help.
+# riscv
+Build a 5-stage pipeline RISC CPU based on Pulpino ri5cy core.
